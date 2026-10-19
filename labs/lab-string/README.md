@@ -277,7 +277,7 @@ Los tests de `IsEmpty` ya están activos en `StringTest.c`. Corré `make test` y
 
 **P1** — `IsEmpty` podría haberse escrito también como `return s[0] == '\0'`. ¿Son equivalentes? ¿Por qué?
 
-> R:
+> R:Si, Son equivalentes, en ambos casos se accede al primer caracter y se compara con '\0'
 
 ---
 
@@ -328,14 +328,14 @@ make test
 
 **P2** — ¿Qué hace `s + 1`? ¿Por qué avanza al siguiente carácter y no al siguiente byte?
 
-> R:
+> R: s+1 avanza un elemento del tipo apuntado, como char ocupa un byte, avanzar un elemento equivale a avanzar un byte y por eso cae en el siguiente caracter.
 
 **P3** — Si llamaras a `GetLength(NULL)`, ¿qué pasaría? ¿Por qué las precondiciones del contrato dicen `s != NULL`?
 
-> R:
+> R:La funcion desreferencia *s sobre un puntero nulo lo que lleva a un segmentation fault. La funcion no verifica el puntero y asume que quien la llama le pasa una cadena valida.
 
 ```
-GETLENGTH_PASA=
+GETLENGTH_PASA=SI
 ```
 _(escribí SI cuando todos los tests de GetLength pasen)_
 
@@ -367,7 +367,7 @@ El `while` termina cuando alguna de las dos cadenas llega a `'\0'`. Después dev
 
 **P4** — ¿Qué dos casos están mal cubiertos por `return 1`? Describí un ejemplo para cada uno.
 
-> R:
+> R:El while termina cuando alguna de las dos cadenas llega a '\0' y el return 1 no verifica que la otra tambien haya terminado. Caso 1: s1 es mas larga que s2 por ejemplo AreEqual("abc", "ab"). Caso 2: s2 mas larga que s1 por ejemplo AreEqual("ab", "abc").
 
 #### Corrección
 
@@ -384,7 +384,7 @@ make test
 ```
 
 ```
-AREEQUAL_PASA=
+AREEQUAL_PASA=SI
 ```
 _(escribí SI cuando todos los tests de AreEqual pasen)_
 
@@ -414,7 +414,7 @@ int AreDecimalDigits(const char *s) {
 
 **P5** — ¿Por qué la cadena vacía no debería considerarse un conjunto de dígitos decimales? Pensalo desde la especificación matemática.
 
-> R:
+> R:Según la especificación, AreDecimalDigits(ε) = 0 requiere al menos un caracter y todos deben ser dígitos. Una cadena vacía no representa ningún numero asi que no deberia considerarse un conjunto valido de digitos.
 
 #### Corrección
 
@@ -425,7 +425,7 @@ make test
 ```
 
 ```
-AREDECIMALDIGITS_PASA=
+AREDECIMALDIGITS_PASA=SI
 ```
 _(escribí SI cuando todos los tests de AreDecimalDigits pasen)_
 
@@ -452,7 +452,7 @@ make test
 ```
 
 ```
-CONTAINS_PASA=
+CONTAINS_PASA=SI
 ```
 _(escribí SI cuando todos los tests de Contains pasen)_
 
@@ -467,7 +467,7 @@ Antes de implementar, discutí con tu equipo:
 
 **P6** — Conclusión de la discusión:
 
-> R:
+> R:No tiene sentido que ToInteger sea parte de String ya que su dominio de entrada si es string pero su codominio es integer por lo que cruza la frontera entre tipos. Sería correcto separarla en un modulo conversion, que mantenmga la cohesión de cada modulo.
 
 ---
 
@@ -494,7 +494,7 @@ int ToInteger(const char *s) {
 
 **P7** — El loop acumula correctamente el valor en `resultado`. ¿Qué está mal en el `return`?
 
-> R:
+> R:El return devuelve signo, que vale solo 1 o -1 y descarwta el valor acumulado en resultado. Debería devolver signo * resultado.
 
 #### Corrección
 
@@ -506,10 +506,10 @@ make test
 
 **P8** — La expresión `*s - '0'` convierte un carácter dígito al entero correspondiente. ¿Por qué funciona? ¿Qué devuelve `'3' - '0'`?
 
-> R:
+> R:Funciona por que en ASCII los digitos consecutivos '0' vale 48, '1' vale 49, ... , '9' vale 57. Al restar '0' se obtiene la posición del dígito, o sea, su valor numérico. En este caso '3' - '0' devuelve 3 (51 - 48).
 
 ```
-TOINTEGER_PASA=
+TOINTEGER_PASA=SI
 ```
 _(escribí SI cuando todos los tests de ToInteger pasen)_
 
@@ -562,7 +562,7 @@ foo
 
 **P9** — ¿Por qué `(void)argc` suprime un warning? ¿Cuándo sería necesario usar `argc`?
 
-> R:
+> R:Porque es un cast a void que le indica al compilador que no usar argc es intencional, así que no emite el warning de parámetro sin usar.
 
 ---
 
@@ -589,7 +589,7 @@ Salida esperada:
 ```
 
 ```
-LONGITUDES_PASA=
+LONGITUDES_PASA=SI
 ```
 _(SI o NO)_
 
@@ -616,7 +616,7 @@ make mayorlongitud
 ```
 
 ```
-MAYORLONGITUD_PASA=
+MAYORLONGITUD_PASA=SI
 ```
 _(SI o NO)_
 
@@ -635,7 +635,7 @@ make todosiguales
 ```
 
 ```
-TODOSIGUALES_PASA=
+TODOSIGUALES_PASA=SI
 ```
 _(SI o NO)_
 
@@ -652,7 +652,7 @@ make suma
 ```
 
 ```
-SUMA_PASA=
+SUMA_PASA=SI
 ```
 _(SI o NO)_
 
@@ -662,15 +662,17 @@ _(SI o NO)_
 
 **P10** — `GetLength` es recursiva pero en C una llamada recursiva consume un stack frame. Si llamaras `GetLength` con un string de 1.000.000 de caracteres, ¿qué pasaría? ¿Cómo lo resolverías?
 
-> R:
+> R:Cada llamada recursiva consume un stack frame, y con 1.000.000 de caracteres habría 1.000.000 de frames apilados a la vez. Eso suele superar el tamaño del stack (típicamente 8 MB en Linux) y el programa termina con stack overflow (segmentation fault).
+> Se resuelve con una versión iterativa de GetLength: se guarda un puntero al inicio del string y otro que lo recorre carácter por carácter hasta llegar al '\0'. La longitud es la distancia entre ambos punteros. Así se usa memoria constante, sin importar el largo del string.
+
 
 **P11** — En la Parte III, todos los programas usan `char **arg` para iterar en vez de un índice entero. ¿Qué ventaja tiene este estilo? ¿Cuándo sería preferible usar el índice?
 
-> R:
+> R:Con char **arg se recorre argv usando solo el centinela NULL, sin depender de argc ni de un índice, y se evitan errores de off-by-one. Además es el mismo patrón que se usa para recorrer strings con punteros. El índice es preferible cuando se necesita la posición del elemento, cuando se accede de forma no secuencial o hacia atrás, o cuando hay que recorrer varios arreglos en paralelo.
 
 **P12** — En C, `"hola"` es un literal de tipo `const char *`. Si intentaras modificar un carácter con `s[0] = 'H'`, el comportamiento es indefinido. ¿Por qué? ¿En qué parte de la memoria viven los literales?
 
-> R:
+> R:Los literales de cadena viven en memoria estática de solo lectura (segmento de datos constantes, .rodata). Escribir en esa zona viola la protección de memoria y el estándar lo define como comportamiento indefinido; en la práctica suele dar segmentation fault. 
 
 ---
 
